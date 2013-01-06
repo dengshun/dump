@@ -1,6 +1,7 @@
 package com.larrio.dump.doabc
 {
 	
+	
 	/**
 	 * 类文件信息
 	 * @author larryhou
@@ -59,6 +60,8 @@ package com.larrio.dump.doabc
 				_content += "\nPACKAGE MEMBERS:" + appending;
 			}
 			
+			trace("---------------");
+			trace(_content);
 		}
 		
 		// 处理类文件
@@ -208,6 +211,19 @@ package com.larrio.dump.doabc
 			}
 			
 			if (attribute) result += attribute + " ";
+			
+			if (!abc.constants.strings[info.name]) 
+			{
+				result += _name + "/";
+				if (trait)
+				{
+					result += abc.constants.multinames[trait.name];
+				}
+				else
+				{
+					result += _name.match(/\w+$/);
+				}
+			}
 			
 			result += info;
 			if (info.body) result += "\n" + info.body;
