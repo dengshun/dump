@@ -29,17 +29,43 @@ package com.larrio.dump
 		
 		private var _tags:Vector.<SWFTag>;
 		
-		private var _symbol:SymbolClassTag;
+		private var _symbolTags:Vector.<SymbolClassTag>;
 		
 		private var _dict:Dictionary;
+		private var _include:Dictionary;
 		
 		/**
 		 * 构造函数
 		 * create a [SWFile] object
-		 */
-		public function SWFile(bytes:ByteArray)
+		 * @param bytes		SWF文件二进制数据
+		 * @param includes	自定义需要解析的TAG类型列表，默认解析所有TAG；设定该参数可以提高SWF解析速度
+		 */		
+		public function SWFile(bytes:ByteArray, includes:Array = null)
 		{
 			_dict = new Dictionary(true);
+			if (includes)
+			{
+				// 保证控制TAG被解析
+				includes.push(TagType.SET_BACKGROUND_COLOR);
+				includes.push(TagType.FRAME_LABEL);
+				includes.push(TagType.PROTECT);
+				includes.push(TagType.END);
+				includes.push(TagType.EXPORT_ASSETS);
+				includes.push(TagType.IMPORT_ASSETS);
+				includes.push(TagType.IMPORT_ASSETS2);
+				includes.push(TagType.ENABLE_DEBUGGER);
+				includes.push(TagType.ENABLE_DEBUGGER2);
+				includes.push(TagType.SCRIPT_LIMITS);
+				includes.push(TagType.SET_TABLE_INDEX);
+				includes.push(TagType.FILE_ATTRIBUTES);
+				includes.push(TagType.SYMBOL_CLASS);
+				includes.push(TagType.META_DATA);
+				includes.push(TagType.DEFINE_SCALING_GRID);
+				includes.push(TagType.DEFINE_SCENE_AND_FRAME_LABEL_DATA);
+				
+				_include = new Dictionary(true);
+				for each (var type:uint in includes) _include[type] = true;
+			}
 			
 			// 写入文件二进制已编码字节
 			_decoder = new FileDecoder();
@@ -99,6 +125,7 @@ package com.larrio.dump
 			_header.decode(_decoder);
 			
 			_tags = new Vector.<SWFTag>;
+			_symbolTags = new Vector.<SymbolClassTag>();
 			
 			var position:uint;
 			var tag:SWFTag, type:uint;
@@ -108,14 +135,22 @@ package com.larrio.dump
 				type = _decoder.readUI16() >>> 6;
 				_decoder.position = position;
 				
-				tag = TagFactory.create(type);
+				if (!_include || _include[type])
+				{
+					tag = TagFactory.create(type);
+				}
+				else
+				{
+					tag = new SWFTag();
+				}
+				
 				tag.dict = _dict;
 				
 				tag.decode(_decoder);
 				
 				if (tag.type == TagType.SYMBOL_CLASS)
 				{
-					_symbol = tag as SymbolClassTag;
+					_symbolTags.push(tag as SymbolClassTag);
 				}
 				
 				_tags.push(tag);
@@ -135,7 +170,7 @@ package com.larrio.dump
 		/**
 		 * SWF链接名TAG
 		 */		
-		public function get symbol():SymbolClassTag { return _symbol; }
+		public function get symbolTags():Vector.<SymbolClassTag> { return _symbolTags; }
 
 	}
 }

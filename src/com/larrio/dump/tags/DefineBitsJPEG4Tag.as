@@ -42,6 +42,8 @@ package com.larrio.dump.tags
 			
 			_bitmapAlphaData = new ByteArray();
 			decoder.readBytes(_bitmapAlphaData);
+			
+			_bitmapAlphaData.uncompress();
 		}
 		
 		/**
@@ -54,17 +56,13 @@ package com.larrio.dump.tags
 			encoder.writeUI32(_size);
 			encoder.writeUI16(_deblockParam);
 			encoder.writeBytes(_data);
+			
+			_bitmapAlphaData.compress();
+			_compressed = true;
+			
 			encoder.writeBytes(_bitmapAlphaData);
 		}
 		
-		/**
-		 * 字符串输出
-		 */		
-		override public function toString():String
-		{
-			return "";	
-		}
-
 		/**
 		 * Parameter to be fed into the deblocking filter. 
 		 * The parameter describes a relative strength of the deblocking filter from 0- 100% expressed in a normalized 8.8 fixed point format.

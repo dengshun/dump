@@ -17,6 +17,9 @@ package com.larrio.dump.model.colors
 		protected var _green:uint;
 		protected var _blue:uint;
 		
+		protected var _rgb:uint;
+		protected var _value:uint;
+		
 		/**
 		 * 构造函数
 		 * create a [RGBColor] object
@@ -35,6 +38,9 @@ package com.larrio.dump.model.colors
 			_red = decoder.readUI8();
 			_green = decoder.readUI8();
 			_blue = decoder.readUI8();
+			
+			_rgb = _red << 16 | _green << 8 | _blue;
+			_value = _rgb;
 		}
 		
 		/**
@@ -77,5 +83,15 @@ package com.larrio.dump.model.colors
 		 */		
 		public function get blue():uint { return _blue; }
 
+		/**
+		 * 颜色值
+		 */		
+		public function get value():uint { return _value; }
+
+		/**
+		 * RGB颜色值
+		 */		
+		public function get rgb():uint { return _rgb; }
+		
 	}
 }

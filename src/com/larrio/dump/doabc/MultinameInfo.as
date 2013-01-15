@@ -52,11 +52,20 @@ package com.larrio.dump.doabc
 					_ns = decoder.readEU30();
 					assertTrue(_ns >= 0 && _ns < _constants.namespaces.length);
 					
-					prefix = _constants.namespaces[_ns].toString();
-					if (prefix && prefix.indexOf(":") < 0) _definition = true;
-					
 					_name = decoder.readEU30();
 					assertTrue(_name >= 0 && _name < _constants.strings.length);
+					
+					prefix = _constants.namespaces[_ns].toString();
+					if (prefix && prefix.indexOf(":") < 0) 
+					{
+						prefix = _constants.strings[_name];
+						if (prefix && prefix.length >= 4)
+						{
+							prefix = prefix.charAt(0);
+							_definition = (prefix == prefix.toUpperCase());
+						}
+					}
+					
 					break;
 				}
 						

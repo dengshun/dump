@@ -8,8 +8,6 @@ package com.larrio.dump.model.shape
 	import com.larrio.dump.model.colors.RGBColor;
 	import com.larrio.dump.tags.TagType;
 	
-	import flash.utils.flash_proxy;
-	
 	/**
 	 * 
 	 * @author larryhou
