@@ -1,5 +1,9 @@
 package com.larrio.dump.tags
 {
+	import com.larrio.dump.codec.FileDecoder;
+	import com.larrio.dump.codec.FileEncoder;
+	
+	import flash.utils.ByteArray;
 	
 	/**
 	 * 
@@ -18,5 +22,6 @@ package com.larrio.dump.tags
 		{
 			
 		}
+		
 	}
 }

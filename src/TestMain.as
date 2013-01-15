@@ -1,7 +1,15 @@
 package
 {
+	
+	import flash.display.Graphics;
+	import flash.display.Loader;
+	import flash.display.Shape;
 	import flash.display.Sprite;
-	import flash.utils.ByteArray;
+	import flash.events.Event;
+	import flash.system.ApplicationDomain;
+	import flash.system.LoaderContext;
+	
+	[SWF(width="1024", height="768")]
 	
 	/**
 	 * 
@@ -10,6 +18,7 @@ package
 	 */
 	public class TestMain extends Sprite
 	{
+		private var _canvas:Graphics;
 		
 		/**
 		 * 构造函数
@@ -17,21 +26,22 @@ package
 		 */
 		public function TestMain()
 		{
-			var bytes:ByteArray = new ByteArray();
-			bytes.writeMultiByte("j", "utf-8");
-			
-			trace(bytes.length);
-			
-			bytes.length = 0;
-			bytes.writeMultiByte("j", "utf8");
-			trace(bytes.length);
-			
-			var index:int;
-			while (index <= 0xFF)
-			{
-				trace(index + ": " + String.fromCharCode(index));
-				index++;
-			}
+			addEventListener(Event.ADDED_TO_STAGE, init);
 		}		
+		
+		private function init(e:Event):void
+		{
+			var loader:Loader = new Loader();
+			loader.contentLoaderInfo.addEventListener(Event.COMPLETE, completeHandler);
+			loader.loadBytes(loaderInfo.bytes, new LoaderContext(false, new ApplicationDomain()));
+			
+			trace("Task@2");
+		}
+		protected function completeHandler(e:Event):void
+		{
+			// TODO Auto-generated method stub
+			trace("Task@1");
+		}
+		
 	}
 }

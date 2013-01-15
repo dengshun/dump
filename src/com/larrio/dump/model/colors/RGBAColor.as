@@ -30,6 +30,9 @@ package com.larrio.dump.model.colors
 			super.decode(decoder);
 			
 			_alpha = decoder.readUI8();
+			
+			_rgb =  _red << 16 | _green << 8 | _blue;
+			_value = _alpha << 24 | _rgb;
 		}
 		
 		/**
@@ -52,6 +55,12 @@ package com.larrio.dump.model.colors
 			result.@alpha = _alpha.toString(16).toUpperCase();
 			return result.toXMLString();
 		}
+
+		/**
+		 * alpha通道
+		 */		
+		public function get alpha():uint { return _alpha; }
+
 		
 	}
 }

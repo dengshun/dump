@@ -4,6 +4,7 @@ package com.larrio.dump.tags
 	import com.larrio.dump.codec.FileEncoder;
 	
 	import flash.utils.ByteArray;
+	import flash.utils.getQualifiedClassName;
 	
 	/**
 	 * 
@@ -53,11 +54,17 @@ package com.larrio.dump.tags
 		 */		
 		public function toString():String
 		{
-			return "";	
+			var localName:String = getQualifiedClassName(this).split("::")[1];
+			var result:XML = new XML("<" + localName + "/>");
+			result.@character = _character;
+			
+			return result.toXMLString();	
 		}
 
 		/**
 		 * JPEG compressed image
+		 * 8.0版本之后表示JPEG图片的二进制数据，可以直接保存为JPEG图片
+		 * 对于JPEG3、JPEG4则需要混合alpha通道才能正确展示
 		 */		
 		public function get data():ByteArray { return _data; }
 

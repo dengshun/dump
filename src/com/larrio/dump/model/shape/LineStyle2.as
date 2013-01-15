@@ -177,5 +177,25 @@ package com.larrio.dump.model.shape
 		 */		
 		public function get style():FillStyle { return _style; }
 
+		/**
+		 * 没有水平缩放 
+		 */		
+		public function get noHScaleFlag():uint { return _noHScaleFlag; }
+
+		/**
+		 * 没有竖向缩放
+		 */		
+		public function get noVScaleFlag():uint { return _noVScaleFlag; }
+
+		/**
+		 * 是否有hinting
+		 */		
+		public function get pixelHintingFlag():uint { return _pixelHintingFlag; }
+
+		/**
+		 * 是否有填充
+		 */		
+		public function get hasFillFlag():uint { return _hasFillFlag; }
+
 	}
 }

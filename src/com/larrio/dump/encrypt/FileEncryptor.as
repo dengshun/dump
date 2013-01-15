@@ -31,10 +31,9 @@ package com.larrio.dump.encrypt
 		private var _map:Dictionary;
 		private var _reverse:Dictionary;
 		private var _include:Dictionary;
+		private var _exclude:Dictionary;
 		
 		private var _undup:Dictionary;
-		private var _symbols:Dictionary;
-		private var _interfaces:Dictionary;
 		
 		private var _decrypting:Boolean;
 		
@@ -50,10 +49,9 @@ package com.larrio.dump.encrypt
 			_map = new Dictionary(true);
 			_reverse = new Dictionary(true);
 			_include = new Dictionary(true);
+			_exclude = new Dictionary(true);
 			
 			_undup = new Dictionary(true);
-			_symbols = new Dictionary(true);
-			_interfaces = new Dictionary(true);
 		}
 		
 		/**
@@ -80,14 +78,38 @@ package com.larrio.dump.encrypt
 				replace(item.strings, 1);
 			}
 			
-			var symbol:SymbolClassTag;
-			for (i = 0; i < _files.length; i++)
+			var def:String, key:String, list:Array;
+			
+			//  同步加密文档类对应symbol
+			for each(var swf:SWFile in _files)
 			{
-				symbol = _files[i].symbol;
-				if (!symbol) continue;
-				
-				symbol.modified = true;
-				replace(symbol.symbols);
+				for each(var tag:SymbolClassTag in swf.symbolTags)
+				{
+					def = "";
+					length = tag.symbols.length;
+					for (i = 0; i < length; i++)
+					{
+						if (tag.ids[i] == 0)
+						{
+							tag.modified = true;
+							def = tag.symbols[i];
+							def = def.replace(/(\.)(\w+)$/, ":$2");
+							
+							list = def.split(":");
+							for (var j:int = 0; j < list.length; j++)
+							{
+								key = list[j];
+								if (_map[key] is String) list[j] = _map[key];
+							}
+							
+							tag.symbols[i] = list.join(".");
+							break;
+						}
+						
+					}
+					
+					if (def) break;
+				}
 			}
 			
 			return exportConfig();
@@ -115,20 +137,11 @@ package com.larrio.dump.encrypt
 					{
 						continue; // 已加密跳过
 					}
-					
-					if (item.protocol)
+
+					while(true)
 					{
-						key = value;
-						
-						_interfaces[value] = value;
-					}
-					else
-					{
-						while(true)
-						{
-							key = createEncryptSTR(value);
-							if (!_reverse[key]) break;
-						}
+						key = createEncryptSTR(value);
+						if (!_reverse[key]) break;
 					}
 					
 					_map[value] = key;
@@ -223,12 +236,14 @@ package com.larrio.dump.encrypt
 			for(var i:int = offset; i < length; i++)
 			{
 				value = strings[i];
-				if (value.indexOf(":") > 0 || value.indexOf("$") > 0)
+				if (value.indexOf(":") > 0 || value.indexOf(".as$") > 0)
 				{
+					if (value.indexOf("http:") >= 0) continue;
+					
 					for (var j:int = 0; j < _names.length; j++)
 					{
 						key = _names[j];
-						if (value.indexOf(key) >= 0)
+						if (value.indexOf(key) == 0)
 						{
 							value = value.replace(key, _map[key]);
 							strings[i] = value;
@@ -238,7 +253,10 @@ package com.larrio.dump.encrypt
 				}
 				else
 				{
-					if (_map[value] is String) strings[i] = _map[value];
+					if (_map[value] is String)
+					{
+						strings[i] = _map[value];
+					}
 				}				
 			}
 		}
@@ -259,7 +277,7 @@ package com.larrio.dump.encrypt
 				min = 97; max = 122;
 			}
 			
-			var length:uint = 3 + Math.round(5 * Math.random());
+			var length:uint = 1 + Math.round(7 * Math.random());
 			
 			var char:String;
 			while (result.length < length)
@@ -268,8 +286,6 @@ package com.larrio.dump.encrypt
 				if (char == "." || char == ":") continue;
 				result += char;
 			}
-			
-			assertTrue(result.length == length);
 			
 			return result;
 		}
@@ -282,10 +298,19 @@ package com.larrio.dump.encrypt
 		{
 			_files.push(swf);
 			
-			for each(var def:String in swf.symbol.symbols)
+			var def:String;
+			for each (var symbolTag:SymbolClassTag in swf.symbolTags)
 			{
-				def = def.replace(/(\.)(\w+)$/, ":$2");
-				_symbols[def] = def;
+				var length:uint = symbolTag.symbols.length;
+				for(var i:int = 0; i < length; i++)
+				{
+					// 文档类
+					if (symbolTag.ids[i] == 0) continue;
+					
+					def = symbolTag.symbols[i];
+					def = def.replace(/(\.)(\w+)$/, ":$2");
+					_exclude[def] = def;
+				}
 			}
 			
 			var list:Vector.<DoABCTag> = new Vector.<DoABCTag>();
@@ -304,16 +329,12 @@ package com.larrio.dump.encrypt
 		// 加密防错优化处理
 		private function optimize():void
 		{
-			var exclude:Dictionary = new Dictionary(true);
+			var key:String;
 			
-			var definition:String;
-			for each (var swf:SWFile in _files)
-			{
-				// 链接名不做加密处理
-				for each (definition in swf.symbol.symbols) exclude[definition] = definition.replace(/(\.)(\w+)$/, ":$2");
-			}
-			
+			_include = def2map(_include);
+						
 			// 制作导入类映射表
+			var definition:String;
 			for each(var item:EncryptItem in _queue)
 			{
 				var multinames:Vector.<MultinameInfo> = item.tag.abc.constants.multinames;
@@ -324,18 +345,16 @@ package com.larrio.dump.encrypt
 						definition = info.toString();
 						if (_include[definition]) continue;
 						
-						exclude[definition] = definition;
+						_exclude[definition] = definition;
 					}
 				}
 			}
 			
-			exclude = def2map(exclude);
+			_exclude = def2map(_exclude);
+			for (key in _map) if (_exclude[key]) delete _map[key];
 			
 			_names = new Vector.<String>();
-			for (var key:String in _map)
-			{
-				if (key) _names.push(key);
-			}
+			for (key in _map) if (key) _names.push(key);
 			
 			// 按照长度降序排列
 			_names.sort(function (s1:String, s2:String):int
@@ -345,26 +364,19 @@ package com.larrio.dump.encrypt
 		}
 		
 		// definition split map
-		private function def2map(dict:Dictionary, exclude:Dictionary = null):Dictionary
+		private function def2map(dict:Dictionary):Dictionary
 		{
-			exclude ||= new Dictionary(true);
-			
-			var list:Array = [];
+			var list:Array;
 			for each (var key:String in dict)
 			{
-				list.push.apply(null, key.split(":"));
-			}
-			
-			var result:Dictionary = new Dictionary(true);
-			for each (key in list)
-			{
-				if (!exclude[key]) 
+				list = key.split(":");
+				for each (var item:String in list)
 				{
-					result[key] = true;
+					if (item) dict[item] = item;
 				}
 			}
 			
-			return result;
+			return dict;
 		}
 		
 		/**
@@ -396,26 +408,32 @@ package com.larrio.dump.encrypt
 							case MultiKindType.QNAME_A:
 							{
 								key = multiname.toString();
-								if (_symbols[key]) break;	// 链接名不加密
+								
+								if (_exclude[key]) break;	// 链接名不加密
 								
 								definition = new DefinitionItem();
 								definition.name = item.strings[multiname.name];
 								
-								// 删除同名类
-								if (_undup[definition.name])
-								{
-									// 保证同名类不加密
-									delete _include[_undup[definition.name]];
-									break;
-								}
-								
 								if (!_include[key])
 								{
+									// 删除同名类
+									if (_undup[definition.name])
+									{
+										// 保证同名类不加密
+										delete _include[_undup[definition.name]];
+										break;
+									}
+									
+									if (cls.instance.protocol) 
+									{
+										_exclude[key] = key;
+										break;
+									}
+									
 									_undup[definition.name] = _include[key] = key;
 									
 									definition.protocol = cls.instance.protocol;
 									definition.ns = item.strings[tag.abc.constants.namespaces[multiname.ns].name];
-									
 									item.definitions.push(definition);
 								}
 								

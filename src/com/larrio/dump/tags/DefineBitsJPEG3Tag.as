@@ -3,6 +3,7 @@ package com.larrio.dump.tags
 	import com.larrio.dump.codec.FileDecoder;
 	import com.larrio.dump.codec.FileEncoder;
 	
+	import flash.display.BitmapData;
 	import flash.utils.ByteArray;
 	
 	/**
@@ -42,6 +43,43 @@ package com.larrio.dump.tags
 			
 			_bitmapAlphaData = new ByteArray();
 			decoder.readBytes(_bitmapAlphaData);
+			
+			_bitmapAlphaData.uncompress();
+		}
+		
+		/**
+		 * Alpha通道混合 
+		 * @param data	JPEG位图BitmapData数据
+		 * @param dispose	是否释放源BitmapData占用内存
+		 */		
+		public function blendAlpha(data:BitmapData, dispose:Boolean = true):BitmapData
+		{
+			data.lock();
+			
+			var result:BitmapData = new BitmapData(data.width, data.height, true, 0);
+			result.lock();
+			
+			_bitmapAlphaData.position = 0;
+			
+			var alpha:uint;
+			var locX:uint, locY:uint;
+			while (locY < result.height)
+			{
+				locX = 0;
+				while (locX < result.width)
+				{
+					alpha = _bitmapAlphaData.readUnsignedByte();
+					result.setPixel32(locX, locY, alpha << 24 | data.getPixel(locX, locY));
+					locX++;
+				}
+				
+				locY++;
+			}
+			
+			result.unlock();
+			dispose && data.dispose();
+			
+			return result;
 		}
 		
 		/**
@@ -53,17 +91,13 @@ package com.larrio.dump.tags
 			encoder.writeUI16(_character);
 			encoder.writeUI32(_size);
 			encoder.writeBytes(_data);
+			
+			_bitmapAlphaData.compress();
+			_compressed = true;
+			
 			encoder.writeBytes(_bitmapAlphaData);
 		}
 		
-		/**
-		 * 字符串输出
-		 */		
-		override public function toString():String
-		{
-			return "";	
-		}
-
 		/**
 		 * ZLIB compressed array of alpha data. Only supported when tag contains JPEG data. 
 		 * One byte per pixel. Total size after decompression must equal (width * height) of JPEG image.
